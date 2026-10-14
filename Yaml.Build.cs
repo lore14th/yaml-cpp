@@ -1,36 +1,35 @@
-// YAML Tinfoil build script
+// Tinfoil Engine build script
 
 using Sharpmake;
-using System;
 using System.IO;
-using System.Collections.Generic;
+using TinfoilBuildTool;
 
-[Sharpmake.Generate]
-public class YAML : TinfoilProjectBase
+using Configuration = Sharpmake.Project.Configuration;
+
+[BuildModule(typeof(TinfoilProject))]
+public class Yaml : TinfoilThirdPartyModuleDependency
 {
-	public YAML()
+	public Yaml(ReadOnlyModuleRules rules) : base(rules)
 	{
-		Name = "YAML";
-		SourceRootPath = @"[project.SharpmakeCsPath]/src";
-		AdditionalSourceRootPaths.Add(@"[project.SharpmakeCsPath]/include");
-
-		SourceFiles.Add(@"../YAML.Build.cs");
 	}
 
-	public override void ConfigureProject(Project.Configuration config, TinfoilTarget target)
+	public override void ConfigureBuild(Configuration config, ITarget target)
 	{
-		config.Output = Configuration.OutputType.Lib;
+		base.ConfigureBuild(config, target);
 
-		config.Options.Add(Options.Vc.Compiler.CppLanguageStandard.CPP17);
-		config.Options.Add(Options.Vc.Compiler.Exceptions.EnableWithSEH);
-		config.Options.Add(Options.Vc.General.WindowsTargetPlatformVersion.Latest);
-		config.Options.Add(Options.Vc.Librarian.TreatLibWarningAsErrors.Enable);
+		if (config.Output == Configuration.OutputType.Lib)
+		{
+			config.Defines.Add("YAML_CPP_STATIC_DEFINE");
+			config.ExportDefines.Add("YAML_CPP_STATIC_DEFINE");
+		}
+
+		config.IncludePaths.Add(@"[project.SharpmakeCsPath]/include");
 
 		// C4702: Unreachable code
 		// C4244, C4267: Possible data loss
 		config.Options.Add(new Options.Vc.Compiler.DisableSpecificWarnings("4702", "4244", "4267"));
 
-		config.Defines.Add("YAML_CPP_STATIC_DEFINE");
-		config.IncludePaths.Add(@"[project.SharpmakeCsPath]/include");
+		config.SourceFilesBuildExclude.AddRange(Directory.EnumerateFiles(Path.Combine(RootDirectory, "test"), "*", SearchOption.AllDirectories));
+		config.SourceFilesBuildExclude.AddRange(Directory.EnumerateFiles(Path.Combine(RootDirectory, "util"), "*", SearchOption.AllDirectories));
 	}
 }
